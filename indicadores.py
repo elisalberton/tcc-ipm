@@ -40,8 +40,20 @@ indicadores["crescimento_pct"] = (
 # Países que só aparecem em 1 ano não têm como calcular crescimento (fica em branco/NaN)
 indicadores.loc[indicadores["ano_inicial"] == indicadores["ano_final"], "crescimento_pct"] = None
 
+# Indicador de ESTABILIDADE: coeficiente de variação (desvio padrão / média)
+# Quanto MENOR o valor, mais estável é o mercado (oscila menos entre os anos)
+desvio_padrao = resumo.groupby("NO_PAIS")["valor_exportado_usd"].std().rename("desvio_padrao_usd")
+indicadores = indicadores.merge(desvio_padrao, on="NO_PAIS")
+
+indicadores["coef_variacao"] = indicadores["desvio_padrao_usd"] / indicadores["volume_medio_usd"]
+
+# Países com só 1 ano de dados não têm desvio padrão calculável (fica em branco/NaN)
+
 print("=== Indicadores por país ===")
 print(indicadores.sort_values("volume_medio_usd", ascending=False).head(15))
+
+print("\n=== Conferindo só as colunas de estabilidade ===")
+print(indicadores[["NO_PAIS", "volume_medio_usd", "desvio_padrao_usd", "coef_variacao"]].sort_values("coef_variacao").head(10))
 
 print(f"\nTotal de países com indicadores calculados: {len(indicadores)}")
 
