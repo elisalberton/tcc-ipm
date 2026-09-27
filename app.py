@@ -28,9 +28,9 @@ ranking = ranking.sort_values("IPM", ascending=False)
 
 resumo = resumo_completo[resumo_completo["CO_NCM"] == ncm_escolhido].copy()
 
-# Cria as abas do sistema
-tab_visao_global, tab_oportunidades, tab_analise_pais = st.tabs(
-    ["Visão Global", "Análise de Oportunidades", "Análise por País"]
+# Abas do sistema
+tab_visao_global, tab_oportunidades, tab_analise_pais, tab_recomendacao = st.tabs(
+    ["Visão Global", "Análise de Oportunidades", "Análise por País", "Recomendação"]
 )
 
 # === TELA 2: Visão Global ===
@@ -140,3 +140,59 @@ with tab_analise_pais:
     )
 
     st.plotly_chart(fig_pais, use_container_width=True)
+
+    # === TELA 5: Recomendação Automática ===
+with tab_recomendacao:
+    st.markdown("### Recomendação de Mercado Prioritário")
+
+    melhor_pais = ranking.sort_values("IPM", ascending=False).iloc[0]
+
+    nome_pais = melhor_pais["NO_PAIS"]
+    ipm_valor = melhor_pais["IPM"]
+    crescimento = melhor_pais["crescimento_pct"]
+    volume = melhor_pais["volume_medio_usd"]
+    estabilidade = melhor_pais["coef_variacao"]
+
+    # Classifica o crescimento em texto, por faixa
+    if crescimento > 30:
+        texto_crescimento = "crescimento expressivo"
+    elif crescimento > 0:
+        texto_crescimento = "crescimento moderado"
+    else:
+        texto_crescimento = "retração"
+
+    # Classifica a estabilidade em texto (coef_variacao menor = mais estável)
+    if estabilidade < 0.15:
+        texto_estabilidade = "alta estabilidade"
+    elif estabilidade < 0.30:
+        texto_estabilidade = "estabilidade moderada"
+    else:
+        texto_estabilidade = "volatilidade considerável"
+
+    recomendacao = (
+        f"**{nome_pais}** apresenta o maior Índice de Potencial de Mercado (IPM = {ipm_valor:.1f}) "
+        f"entre os países analisados para o NCM {ncm_escolhido}. O mercado exibe {texto_crescimento} "
+        f"nas exportações brasileiras ao longo do período analisado ({crescimento:.1f}%), "
+        f"volume médio exportado de aproximadamente US$ {volume:,.0f} por ano, e {texto_estabilidade} "
+        f"na demanda observada (coeficiente de variação de {estabilidade:.2f})."
+    )
+
+    st.info(recomendacao)
+
+    st.markdown("#### Demais mercados em destaque")
+    proximos = ranking.sort_values("IPM", ascending=False).iloc[1:4]
+
+    for _, linha in proximos.iterrows():
+        st.write(
+            f"- **{linha['NO_PAIS']}** (IPM = {linha['IPM']:.1f}): "
+            f"crescimento de {linha['crescimento_pct']:.1f}%, "
+            f"volume médio de US$ {linha['volume_medio_usd']:,.0f}"
+        )
+
+    st.caption(
+        "Esta recomendação é gerada automaticamente a partir de regras de negócio aplicadas "
+        "aos indicadores calculados pelo sistema, com base exclusivamente em dados de exportações "
+        "brasileiras. Não considera participação de mercado, condições tarifárias ou barreiras "
+        "comerciais específicas de cada país, devendo ser interpretada como apoio à decisão, "
+        "não como recomendação definitiva."
+    )
