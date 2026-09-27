@@ -30,7 +30,7 @@ resumo = resumo_completo[resumo_completo["CO_NCM"] == ncm_escolhido].copy()
 
 # Abas do sistema
 tab_visao_global, tab_oportunidades, tab_analise_pais, tab_recomendacao = st.tabs(
-    ["Visão Global", "Análise de Oportunidades", "Análise por País", "Recomendação"]
+    ["Visão Global", "Análise de Oportunidades", "Análise por País", "Mercado em Destaque"]
 )
 
 # === TELA 2: Visão Global ===
@@ -142,18 +142,18 @@ with tab_analise_pais:
     st.plotly_chart(fig_pais, use_container_width=True)
 
     # === TELA 5: Recomendação Automática ===
+# === TELA 5: Mercado em Destaque ===
 with tab_recomendacao:
-    st.markdown("### Recomendação de Mercado Prioritário")
+    st.markdown("### Mercado com Maior Índice de Potencial de Mercado (IPM)")
 
-    melhor_pais = ranking.sort_values("IPM", ascending=False).iloc[0]
+    pais_destaque = ranking.sort_values("IPM", ascending=False).iloc[0]
 
-    nome_pais = melhor_pais["NO_PAIS"]
-    ipm_valor = melhor_pais["IPM"]
-    crescimento = melhor_pais["crescimento_pct"]
-    volume = melhor_pais["volume_medio_usd"]
-    estabilidade = melhor_pais["coef_variacao"]
+    nome_pais = pais_destaque["NO_PAIS"]
+    ipm_valor = pais_destaque["IPM"]
+    crescimento = pais_destaque["crescimento_pct"]
+    volume = pais_destaque["volume_medio_usd"]
+    estabilidade = pais_destaque["coef_variacao"]
 
-    # Classifica o crescimento em texto, por faixa
     if crescimento > 30:
         texto_crescimento = "crescimento expressivo"
     elif crescimento > 0:
@@ -161,7 +161,6 @@ with tab_recomendacao:
     else:
         texto_crescimento = "retração"
 
-    # Classifica a estabilidade em texto (coef_variacao menor = mais estável)
     if estabilidade < 0.15:
         texto_estabilidade = "alta estabilidade"
     elif estabilidade < 0.30:
@@ -169,15 +168,16 @@ with tab_recomendacao:
     else:
         texto_estabilidade = "volatilidade considerável"
 
-    recomendacao = (
-        f"**{nome_pais}** apresenta o maior Índice de Potencial de Mercado (IPM = {ipm_valor:.1f}) "
-        f"entre os países analisados para o NCM {ncm_escolhido}. O mercado exibe {texto_crescimento} "
-        f"nas exportações brasileiras ao longo do período analisado ({crescimento:.1f}%), "
-        f"volume médio exportado de aproximadamente US$ {volume:,.0f} por ano, e {texto_estabilidade} "
-        f"na demanda observada (coeficiente de variação de {estabilidade:.2f})."
+    destaque = (
+        f"**{nome_pais}** apresentou o maior Índice de Potencial de Mercado (IPM = {ipm_valor:.1f}) "
+        f"entre os países analisados para o NCM {ncm_escolhido}, segundo os critérios e pesos definidos "
+        f"no modelo. O fluxo de exportações brasileiras para esse país exibiu {texto_crescimento} "
+        f"ao longo do período disponível ({crescimento:.1f}%), volume médio de aproximadamente "
+        f"US$ {volume:,.0f} por ano, e {texto_estabilidade} nas exportações observadas "
+        f"(coeficiente de variação de {estabilidade:.2f})."
     )
 
-    st.info(recomendacao)
+    st.info(destaque)
 
     st.markdown("#### Demais mercados em destaque")
     proximos = ranking.sort_values("IPM", ascending=False).iloc[1:4]
@@ -190,9 +190,9 @@ with tab_recomendacao:
         )
 
     st.caption(
-        "Esta recomendação é gerada automaticamente a partir de regras de negócio aplicadas "
-        "aos indicadores calculados pelo sistema, com base exclusivamente em dados de exportações "
-        "brasileiras. Não considera participação de mercado, condições tarifárias ou barreiras "
-        "comerciais específicas de cada país, devendo ser interpretada como apoio à decisão, "
+        "O IPM classifica os mercados analisados segundo os critérios e pesos definidos no modelo, "
+        "com base exclusivamente em dados de exportações brasileiras. Não representa uma medida de "
+        "demanda do mercado importador, participação de mercado, condições tarifárias ou barreiras "
+        "comerciais específicas de cada país, devendo ser interpretado como apoio à decisão, "
         "não como recomendação definitiva."
     )
