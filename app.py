@@ -29,7 +29,9 @@ ranking = ranking.sort_values("IPM", ascending=False)
 resumo = resumo_completo[resumo_completo["CO_NCM"] == ncm_escolhido].copy()
 
 # Cria as abas do sistema
-tab_visao_global, tab_oportunidades = st.tabs(["Visão Global", "Análise de Oportunidades"])
+tab_visao_global, tab_oportunidades, tab_analise_pais = st.tabs(
+    ["Visão Global", "Análise de Oportunidades", "Análise por País"]
+)
 
 # === TELA 2: Visão Global ===
 with tab_visao_global:
@@ -101,3 +103,40 @@ with tab_oportunidades:
         }),
         use_container_width=True
     )
+
+    # === TELA 4: Análise por País ===
+with tab_analise_pais:
+    st.markdown("### Análise Detalhada por País")
+
+    lista_paises = ranking.sort_values("NO_PAIS")["NO_PAIS"].tolist()
+    pais_escolhido = st.selectbox("Escolha um país para analisar:", lista_paises)
+
+    # Dados do país escolhido dentro do ranking do NCM selecionado
+    dados_pais = ranking[ranking["NO_PAIS"] == pais_escolhido].iloc[0]
+
+    ranking_ordenado = ranking.sort_values("IPM", ascending=False).reset_index(drop=True)
+    posicao = ranking_ordenado[ranking_ordenado["NO_PAIS"] == pais_escolhido].index[0] + 1
+    total_paises = len(ranking_ordenado)
+
+    st.markdown(f"**Posição no ranking:** {posicao}º de {total_paises} países analisados para este NCM")
+
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("IPM", f"{dados_pais['IPM']:.1f}")
+    col2.metric("Volume Médio (US$)", f"{dados_pais['volume_medio_usd']:,.0f}")
+    col3.metric("Crescimento (%)", f"{dados_pais['crescimento_pct']:.1f}%")
+    col4.metric("Coef. Variação", f"{dados_pais['coef_variacao']:.2f}")
+
+    st.markdown(f"### Evolução das Exportações Brasileiras para {pais_escolhido}")
+
+    resumo_pais = resumo[resumo["NO_PAIS"] == pais_escolhido].sort_values("CO_ANO")
+
+    fig_pais = px.line(
+        resumo_pais,
+        x="CO_ANO",
+        y="valor_exportado_usd",
+        title=f"Exportações Brasileiras para {pais_escolhido} — NCM {ncm_escolhido}",
+        labels={"CO_ANO": "Ano", "valor_exportado_usd": "Valor Exportado (US$)"},
+        markers=True
+    )
+
+    st.plotly_chart(fig_pais, use_container_width=True)
