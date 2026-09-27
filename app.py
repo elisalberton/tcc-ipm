@@ -6,7 +6,7 @@ st.title("Sistema de Inteligência Comercial")
 st.subheader("Análise de Oportunidades de Exportação — Embalagens Plásticas Flexíveis")
 
 # Carrega o ranking já calculado
-ranking = pd.read_csv("dados_brutos/ranking_ipm.csv", sep=";")
+ranking = pd.read_csv("dados_processados/ranking_ipm.csv", sep=";")
 
 # Ordena do maior IPM pro menor
 ranking = ranking.sort_values("IPM", ascending=False)

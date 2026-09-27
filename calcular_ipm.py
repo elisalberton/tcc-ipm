@@ -52,5 +52,5 @@ ranking = indicadores.sort_values("IPM", ascending=False)
 print("\n=== Top 15 países por IPM ===")
 print(ranking[["NO_PAIS", "score_crescimento", "score_volume", "score_estabilidade", "IPM"]].head(15))
 
-ranking.to_csv("dados_brutos/ranking_ipm.csv", index=False, sep=";")
+ranking.to_csv("dados_processados/ranking_ipm.csv", index=False, sep=";")
 print("\nArquivo 'ranking_ipm.csv' salvo com sucesso!")
