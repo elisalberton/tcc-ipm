@@ -1,6 +1,6 @@
 import pandas as pd
 
-# Lê o arquivo já limpo
+# Lê arquivo limpo
 dados = pd.read_csv("dados_brutos/dados_limpos.csv", sep=";")
 
 # Agrupa por país e ano, somando o valor exportado (VL_FOB) e o peso (KG_LIQUIDO)

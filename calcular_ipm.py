@@ -3,7 +3,7 @@ import pandas as pd
 indicadores = pd.read_csv("dados_brutos/indicadores.csv", sep=";")
 
 # Filtro de volume mínimo: remove países com exportação muito baixa,
-# que distorcem o indicador de estabilidade (ex: Vanuatu com US$ 39 de volume médio)
+# que distorcem o indicador de estabilidade
 VOLUME_MINIMO = 500000  # US$ 500 mil - ajustado após validação: filtro anterior deixava passar países irrelevantes
 indicadores = indicadores[indicadores["volume_medio_usd"] >= VOLUME_MINIMO].copy()
 
@@ -17,11 +17,11 @@ def normalizar(coluna, inverter=False):
     maximo = coluna.max()
     normalizado = (coluna - minimo) / (maximo - minimo) * 100
     if inverter:
-        # Pra estabilidade, MENOR coef_variacao = MELHOR, então invertemos a escala
+        # Pra estabilidade, MENOR coef_variacao = MELHOR
         normalizado = 100 - normalizado
     return normalizado
 
-# Alguns países não têm crescimento_pct calculado (só 1 ano de dados) - removemos
+# Alguns países não têm crescimento_pct calculado (só 1 ano de dados) - removidos
 indicadores = indicadores.dropna(subset=["crescimento_pct", "coef_variacao"]).copy()
 # Tratamento de outliers: limita o crescimento_pct a um teto (percentil 90)
 # Isso evita que um caso isolado (ex: país com base de comparação muito pequena)
@@ -36,7 +36,6 @@ indicadores["score_volume"] = normalizar(indicadores["volume_medio_usd"])
 indicadores["score_estabilidade"] = normalizar(indicadores["coef_variacao"], inverter=True)
 
 # Pesos: crescimento e volume têm peso maior, estabilidade menor
-# (essa distribuição pode - e deve - ser justificada no TCC com base na literatura)
 PESO_CRESCIMENTO = 0.15
 PESO_VOLUME = 0.65
 PESO_ESTABILIDADE = 0.20
