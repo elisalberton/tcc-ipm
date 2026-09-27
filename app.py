@@ -7,7 +7,7 @@ st.subheader("Análise de Oportunidades de Exportação — Embalagens Plástica
 
 # Carrega os dados
 ranking_completo = pd.read_csv("dados_processados/ranking_ipm.csv", sep=";")
-resumo_completo = pd.read_csv("dados_brutos/resumo_pais_ano.csv", sep=";")
+resumo_completo = pd.read_csv("dados_processados/resumo_pais_ano.csv", sep=";")
 
 # === TELA 1: Seleção do produto (NCM) — barra lateral
 opcoes_ncm = ranking_completo[["CO_NCM", "NO_NCM_POR"]].drop_duplicates().sort_values("CO_NCM")

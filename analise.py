@@ -17,5 +17,5 @@ print(f"Total de países distintos: {resumo_por_pais_ano['NO_PAIS'].nunique()}")
 print(f"NCMs presentes: {resumo_por_pais_ano['CO_NCM'].unique()}")
 
 # base pro cálculo dos indicadores
-resumo_por_pais_ano.to_csv("dados_brutos/resumo_pais_ano.csv", index=False, sep=";")
+resumo_por_pais_ano.to_csv("dados_processados/resumo_pais_ano.csv", index=False, sep=";")
 print("\nArquivo 'resumo_pais_ano.csv' salvo com sucesso!")
