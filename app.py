@@ -179,6 +179,29 @@ with tab_recomendacao:
 
     st.info(destaque)
 
+    ranking_ordenado = ranking.sort_values("IPM", ascending=False)
+    LIMIAR_PROXIMIDADE = 2.0   # diferença mínima em IPM entre o 1º e o 2º no rankink
+    MIN_PAISES = 5             # mínimo de países p ter referencia
+
+    if len(ranking_ordenado) >= 2:
+        segundo_colocado = ranking_ordenado.iloc[1]
+        diferenca = ipm_valor - segundo_colocado["IPM"]
+        if diferenca < LIMIAR_PROXIMIDADE:
+            st.warning(
+                f"Atenção: a diferença entre o 1º colocado ({nome_pais}) e o 2º colocado "
+                f"({segundo_colocado['NO_PAIS']}) é de apenas {diferenca:.1f} ponto(s) de IPM. "
+                "Em testes com pesos e parâmetros alternativos, a ordem entre mercados com "
+                "pontuações tão próximas pode se inverter. Interprete-os como mercados de "
+                "potencial semelhante, e não como uma hierarquia definitiva."
+            )
+
+    if len(ranking_ordenado) < MIN_PAISES:
+        st.warning(
+            f"Atenção: apenas {len(ranking_ordenado)} países atendem aos critérios de relevância "
+            "para este NCM. Com poucos mercados, a normalização do IPM (escala de 0 a 100 entre "
+            "o menor e o maior valor) tende a exagerar diferenças pequenas, e o ranking é menos robusto."
+        )
+
     st.markdown("#### Demais mercados em destaque")
     proximos = ranking.sort_values("IPM", ascending=False).iloc[1:4]
 
