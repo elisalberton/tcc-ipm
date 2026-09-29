@@ -21,6 +21,26 @@ rotulo_escolhido = st.sidebar.selectbox(
 ncm_escolhido = opcoes_ncm[opcoes_ncm["rotulo"] == rotulo_escolhido]["CO_NCM"].iloc[0]
 
 st.markdown(f"### Produto selecionado: `{rotulo_escolhido}`")
+with st.expander("Como o IPM é calculado?"):
+    st.markdown(
+        """
+O **Índice de Potencial de Mercado (IPM)** combina três indicadores de comércio exterior em uma pontuação única, de 0 a 100, calculada separadamente para cada produto (NCM):
+
+- **Volume médio (peso 65%)** — média do valor exportado ao Brasil para o país, nos anos com dados disponíveis.
+- **Crescimento (peso 15%)** — variação percentual entre o primeiro e o último ano com registro. Valores muito altos são limitados ao percentil 90 do NCM, para que casos isolados não distorçam a comparação.
+- **Estabilidade (peso 20%)** — quanto menos o valor exportado varia de um ano para o outro, maior a pontuação.
+
+$$
+IPM = 0{,}15 \\times \\text{Crescimento} + 0{,}65 \\times \\text{Volume} + 0{,}20 \\times \\text{Estabilidade}
+$$
+
+Cada indicador é normalizado dentro do próprio NCM (o melhor valor do produto vira 100, o pior vira 0), então **pontuações de NCMs diferentes não são comparáveis entre si**.
+
+Só entram no ranking os países com volume médio de pelo menos 10% do maior exportador daquele NCM — por isso o número de países varia conforme o produto selecionado.
+
+O IPM classifica mercados; ele não substitui a análise do profissional de comércio exterior sobre tarifas, barreiras comerciais ou participação de mercado, informações que não fazem parte deste modelo.
+        """
+    )
 
 # Filtra o ranking só pro NCM escolhido
 ranking = ranking_completo[ranking_completo["CO_NCM"] == ncm_escolhido].copy()
@@ -35,9 +55,13 @@ tab_visao_global, tab_oportunidades, tab_analise_pais, tab_recomendacao = st.tab
 
 # === TELA 2: Visão Global ===
 with tab_visao_global:
-    st.markdown("### Top 10 Países de Destino (por Volume Médio Exportado)")
+    st.markdown("### Principais Países de Destino (por Volume Médio Exportado)")
 
     top10_volume = ranking.sort_values("volume_medio_usd", ascending=False).head(10)
+    st.caption(
+        "Considera os países que atendem ao critério de relevância do IPM (volume médio de pelo "
+        f"menos 10% do maior destino do NCM selecionado). Para este NCM: {len(ranking)} países."
+    )
 
     fig_top10 = px.bar(
         top10_volume,
@@ -53,7 +77,7 @@ with tab_visao_global:
 
     st.plotly_chart(fig_top10, use_container_width=True)
 
-    st.markdown("### Evolução das Exportações — Top 5 Países (2021-2025)")
+    st.markdown("### Evolução das Exportações — Principais Destinos (2021-2025)")
 
     top5_paises = top10_volume.head(5)["NO_PAIS"].tolist()
     resumo_top5 = resumo[resumo["NO_PAIS"].isin(top5_paises)]
@@ -63,7 +87,7 @@ with tab_visao_global:
         x="CO_ANO",
         y="valor_exportado_usd",
         color="NO_PAIS",
-        title=f"Evolução das Exportações — NCM {ncm_escolhido}",
+        title=f"Principais Destinos — NCM {ncm_escolhido}",
         labels={"CO_ANO": "Ano", "valor_exportado_usd": "Valor Exportado (US$)", "NO_PAIS": "País"},
         markers=True
     )
