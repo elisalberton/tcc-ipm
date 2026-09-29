@@ -2,6 +2,17 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
+def formatar_moeda(valor):
+    """Formata um número no padrão brasileiro: ponto para milhar, vírgula para decimal."""
+    texto = f"{valor:,.0f}"
+    return "US$ " + texto.replace(",", "X").replace(".", ",").replace("X", ".")
+
+
+def formatar_numero(valor, casas=1):
+    """Formata um número decimal no padrão brasileiro (vírgula)."""
+    texto = f"{valor:,.{casas}f}"
+    return texto.replace(",", "X").replace(".", ",").replace("X", ".")
+
 st.title("Sistema de Inteligência Comercial")
 st.subheader("Análise de Oportunidades de Exportação — Embalagens Plásticas Flexíveis")
 
@@ -19,8 +30,12 @@ rotulo_escolhido = st.sidebar.selectbox(
     opcoes_ncm["rotulo"]
 )
 ncm_escolhido = opcoes_ncm[opcoes_ncm["rotulo"] == rotulo_escolhido]["CO_NCM"].iloc[0]
+st.sidebar.markdown("---")
+st.sidebar.markdown("**Contexto da análise**")
+st.sidebar.markdown(f"Produto: `{ncm_escolhido}`")
+st.sidebar.markdown("Período: 2021-2025")
+st.sidebar.markdown("Fonte: MDIC / Comex Stat")
 
-st.markdown(f"### Produto selecionado: `{rotulo_escolhido}`")
 with st.expander("Como o IPM é calculado?"):
     st.markdown(
         """
@@ -46,6 +61,8 @@ O IPM classifica mercados; ele não substitui a análise do profissional de com�
 ranking = ranking_completo[ranking_completo["CO_NCM"] == ncm_escolhido].copy()
 ranking = ranking.sort_values("IPM", ascending=False)
 
+st.sidebar.markdown(f"Países no ranking: {len(ranking)}")
+
 resumo = resumo_completo[resumo_completo["CO_NCM"] == ncm_escolhido].copy()
 
 # Abas do sistema
@@ -55,6 +72,8 @@ tab_visao_global, tab_oportunidades, tab_analise_pais, tab_recomendacao = st.tab
 
 # === TELA 2: Visão Global ===
 with tab_visao_global:
+    st.metric("Volume total exportado (soma dos volumes médios)", formatar_moeda(ranking["volume_medio_usd"].sum()))
+    st.markdown("---")
     st.markdown("### Principais Países de Destino (por Volume Médio Exportado)")
 
     top10_volume = ranking.sort_values("volume_medio_usd", ascending=False).head(10)
@@ -74,6 +93,7 @@ with tab_visao_global:
     )
     fig_top10.update_layout(yaxis={"categoryorder": "total ascending"})
     fig_top10.update_traces(texttemplate="%{text:,.0f}", textposition="outside")
+    fig_top10.update_layout(separators=",.")
 
     st.plotly_chart(fig_top10, use_container_width=True)
 
@@ -92,6 +112,7 @@ with tab_visao_global:
         markers=True
     )
 
+    fig_evolucao.update_layout(separators=",.")
     st.plotly_chart(fig_evolucao, use_container_width=True)
 
 # === TELA 3: Análise de Oportunidades ===
@@ -111,21 +132,28 @@ with tab_oportunidades:
     )
     fig_ipm.update_layout(yaxis={"categoryorder": "total ascending"})
     fig_ipm.update_traces(texttemplate="%{text:.1f}", textposition="outside")
+    fig_ipm.update_layout(separators=",.")
 
     st.plotly_chart(fig_ipm, use_container_width=True)
 
     st.markdown("### Tabela Detalhada")
 
-    colunas_exibir = ["NO_PAIS", "volume_medio_usd", "crescimento_pct", "coef_variacao", "IPM"]
+    tabela_formatada = ranking[["NO_PAIS", "volume_medio_usd", "crescimento_pct", "coef_variacao", "IPM"]].copy()
+    tabela_formatada["volume_medio_usd"] = tabela_formatada["volume_medio_usd"].apply(formatar_moeda)
+    tabela_formatada["crescimento_pct"] = tabela_formatada["crescimento_pct"].apply(lambda x: formatar_numero(x, 1) + "%")
+    tabela_formatada["coef_variacao"] = tabela_formatada["coef_variacao"].apply(lambda x: formatar_numero(x, 2))
+    tabela_formatada["IPM"] = tabela_formatada["IPM"].apply(lambda x: formatar_numero(x, 1))
+
     st.dataframe(
-        ranking[colunas_exibir].rename(columns={
+        tabela_formatada.rename(columns={
             "NO_PAIS": "País",
-            "volume_medio_usd": "Volume Médio (US$)",
-            "crescimento_pct": "Crescimento (%)",
+            "volume_medio_usd": "Volume Médio",
+            "crescimento_pct": "Crescimento",
             "coef_variacao": "Coef. Variação",
             "IPM": "IPM"
         }),
-        use_container_width=True
+        use_container_width=True,
+        hide_index=True
     )
 
     # === TELA 4: Análise por País ===
@@ -143,12 +171,13 @@ with tab_analise_pais:
     total_paises = len(ranking_ordenado)
 
     st.markdown(f"**Posição no ranking:** {posicao}º de {total_paises} países analisados para este NCM")
+    st.markdown(f"**IPM: {formatar_numero(dados_pais['IPM'], 1)} / 100**")
 
     col1, col2, col3, col4 = st.columns(4)
-    col1.metric("IPM", f"{dados_pais['IPM']:.1f}")
-    col2.metric("Volume Médio (US$)", f"{dados_pais['volume_medio_usd']:,.0f}")
-    col3.metric("Crescimento (%)", f"{dados_pais['crescimento_pct']:.1f}%")
-    col4.metric("Coef. Variação", f"{dados_pais['coef_variacao']:.2f}")
+    col1.metric("IPM", formatar_numero(dados_pais["IPM"], 1))
+    col2.metric("Volume Médio", formatar_moeda(dados_pais["volume_medio_usd"]))
+    col3.metric("Crescimento", formatar_numero(dados_pais["crescimento_pct"], 1) + "%")
+    col4.metric("Coef. Variação", formatar_numero(dados_pais["coef_variacao"], 2))
 
     st.markdown(f"### Evolução das Exportações Brasileiras para {pais_escolhido}")
 
@@ -162,7 +191,8 @@ with tab_analise_pais:
         labels={"CO_ANO": "Ano", "valor_exportado_usd": "Valor Exportado (US$)"},
         markers=True
     )
-
+    
+    fig_pais.update_layout(separators=",.")
     st.plotly_chart(fig_pais, use_container_width=True)
 
     # === TELA 5: Recomendação Automática ===
@@ -193,12 +223,12 @@ with tab_recomendacao:
         texto_estabilidade = "volatilidade considerável"
 
     destaque = (
-        f"**{nome_pais}** apresentou o maior Índice de Potencial de Mercado (IPM = {ipm_valor:.1f}) "
+        f"**{nome_pais}** apresentou o maior Índice de Potencial de Mercado (IPM = {formatar_numero(ipm_valor, 1)}) "
         f"entre os países analisados para o NCM {ncm_escolhido}, segundo os critérios e pesos definidos "
         f"no modelo. O fluxo de exportações brasileiras para esse país exibiu {texto_crescimento} "
-        f"ao longo do período disponível ({crescimento:.1f}%), volume médio de aproximadamente "
-        f"US$ {volume:,.0f} por ano, e {texto_estabilidade} nas exportações observadas "
-        f"(coeficiente de variação de {estabilidade:.2f})."
+        f"ao longo do período disponível ({formatar_numero(crescimento, 1)}%), volume médio de aproximadamente "
+        f"{formatar_moeda(volume)} por ano, e {texto_estabilidade} nas exportações observadas "
+        f"(coeficiente de variação de {formatar_numero(estabilidade, 2)})."
     )
 
     st.info(destaque)
@@ -213,7 +243,7 @@ with tab_recomendacao:
         if diferenca < LIMIAR_PROXIMIDADE:
             st.warning(
                 f"Atenção: a diferença entre o 1º colocado ({nome_pais}) e o 2º colocado "
-                f"({segundo_colocado['NO_PAIS']}) é de apenas {diferenca:.1f} ponto(s) de IPM. "
+                f"({segundo_colocado['NO_PAIS']}) é de apenas {formatar_numero(diferenca, 1)} ponto(s) de IPM. "
                 "Em testes com pesos e parâmetros alternativos, a ordem entre mercados com "
                 "pontuações tão próximas pode se inverter. Interprete-os como mercados de "
                 "potencial semelhante, e não como uma hierarquia definitiva."
@@ -230,10 +260,10 @@ with tab_recomendacao:
     proximos = ranking.sort_values("IPM", ascending=False).iloc[1:4]
 
     for _, linha in proximos.iterrows():
-        st.write(
-            f"- **{linha['NO_PAIS']}** (IPM = {linha['IPM']:.1f}): "
-            f"crescimento de {linha['crescimento_pct']:.1f}%, "
-            f"volume médio de US$ {linha['volume_medio_usd']:,.0f}"
+                st.write(
+            f"- **{linha['NO_PAIS']}** (IPM = {formatar_numero(linha['IPM'], 1)}): "
+            f"crescimento de {formatar_numero(linha['crescimento_pct'], 1)}%, "
+            f"volume médio de {formatar_moeda(linha['volume_medio_usd'])}"
         )
 
     st.caption(
