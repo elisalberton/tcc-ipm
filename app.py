@@ -90,8 +90,10 @@ with tab_visao_global:
         orientation="h",
         title="Principais mercados por volume médio exportado",
         labels={"volume_medio_usd": "Volume Médio Exportado (US$)", "NO_PAIS": "País"},
-        text="volume_medio_usd"
+        text="volume_medio_usd",
+        color_discrete_sequence=["#2F6690"]
     )
+
     fig_top10.update_layout(yaxis={"categoryorder": "total ascending"})
     fig_top10.update_traces(texttemplate="%{text:,.0f}", textposition="outside")
     fig_top10.update_layout(separators=",.")
@@ -139,8 +141,10 @@ with tab_oportunidades:
         orientation="h",
         title="Priorização de mercados por Índice de Potencial de Mercado (IPM)",
         labels={"IPM": "IPM (0 a 100)", "NO_PAIS": "País"},
-        text="IPM"
+        text="IPM",
+        color_discrete_sequence=["#3A8D5D"]
     )
+    
     fig_ipm.update_layout(yaxis={"categoryorder": "total ascending"})
     fig_ipm.update_traces(texttemplate="%{text:.1f}", textposition="outside")
     fig_ipm.update_layout(separators=",.")
