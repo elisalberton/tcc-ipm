@@ -41,7 +41,7 @@ with st.expander("Como o IPM é calculado?"):
         """
 O **Índice de Potencial de Mercado (IPM)** combina três indicadores de comércio exterior em uma pontuação única, de 0 a 100, calculada separadamente para cada produto (NCM):
 
-- **Volume médio (peso 65%)** — média do valor exportado ao Brasil para o país, nos anos com dados disponíveis.
+- **Volume médio (peso 65%)** — média do valor exportado pelo Brasil para o país, nos anos com dados disponíveis.
 - **Crescimento (peso 15%)** — variação percentual entre o primeiro e o último ano com registro. Valores muito altos são limitados ao percentil 90 do NCM, para que casos isolados não distorçam a comparação.
 - **Estabilidade (peso 20%)** — quanto menos o valor exportado varia de um ano para o outro, maior a pontuação.
 
@@ -72,7 +72,8 @@ tab_visao_global, tab_oportunidades, tab_analise_pais, tab_recomendacao = st.tab
 
 # === TELA 2: Visão Global ===
 with tab_visao_global:
-    st.metric("Volume total exportado (soma dos volumes médios)", formatar_moeda(ranking["volume_medio_usd"].sum()))
+    st.metric("Mercados no ranking", len(ranking))
+    st.caption("Países que atendem ao critério de relevância do IPM para este NCM.")
     st.markdown("---")
     st.markdown("### Principais Países de Destino (por Volume Médio Exportado)")
 
@@ -87,13 +88,15 @@ with tab_visao_global:
         x="volume_medio_usd",
         y="NO_PAIS",
         orientation="h",
-        title=f"Top 10 Destinos — NCM {ncm_escolhido}",
+        title="Principais mercados por volume médio exportado",
         labels={"volume_medio_usd": "Volume Médio Exportado (US$)", "NO_PAIS": "País"},
         text="volume_medio_usd"
     )
     fig_top10.update_layout(yaxis={"categoryorder": "total ascending"})
     fig_top10.update_traces(texttemplate="%{text:,.0f}", textposition="outside")
     fig_top10.update_layout(separators=",.")
+    
+    st.caption(f"NCM {ncm_escolhido} · 2021-2025")
 
     st.plotly_chart(fig_top10, use_container_width=True)
 
@@ -117,6 +120,14 @@ with tab_visao_global:
 
 # === TELA 3: Análise de Oportunidades ===
 with tab_oportunidades:
+    pesos_tabela = pd.DataFrame({
+        "Indicador": ["Volume médio", "Estabilidade", "Crescimento"],
+        "Peso": ["65%", "20%", "15%"]
+    })
+    st.markdown("**Composição do IPM**")
+    st.dataframe(pesos_tabela, use_container_width=True, hide_index=True)
+    st.markdown("---")
+
     st.markdown("### Ranking de Países por Índice de Potencial de Mercado (IPM)")
 
     top10_ipm = ranking.head(10)
@@ -126,7 +137,7 @@ with tab_oportunidades:
         x="IPM",
         y="NO_PAIS",
         orientation="h",
-        title=f"Top 10 Países por IPM — NCM {ncm_escolhido}",
+        title="Priorização de mercados por Índice de Potencial de Mercado (IPM)",
         labels={"IPM": "IPM (0 a 100)", "NO_PAIS": "País"},
         text="IPM"
     )
@@ -134,11 +145,16 @@ with tab_oportunidades:
     fig_ipm.update_traces(texttemplate="%{text:.1f}", textposition="outside")
     fig_ipm.update_layout(separators=",.")
 
+    st.caption(f"NCM {ncm_escolhido} · 2021-2025")
+
     st.plotly_chart(fig_ipm, use_container_width=True)
 
     st.markdown("### Tabela Detalhada")
 
-    tabela_formatada = ranking[["NO_PAIS", "volume_medio_usd", "crescimento_pct", "coef_variacao", "IPM"]].copy()
+    ranking_com_posicao = ranking.copy()
+    ranking_com_posicao.insert(0, "Posição", range(1, len(ranking_com_posicao) + 1))
+
+    tabela_formatada = ranking_com_posicao[["Posição", "NO_PAIS", "volume_medio_usd", "crescimento_pct", "coef_variacao", "IPM"]].copy()
     tabela_formatada["volume_medio_usd"] = tabela_formatada["volume_medio_usd"].apply(formatar_moeda)
     tabela_formatada["crescimento_pct"] = tabela_formatada["crescimento_pct"].apply(lambda x: formatar_numero(x, 1) + "%")
     tabela_formatada["coef_variacao"] = tabela_formatada["coef_variacao"].apply(lambda x: formatar_numero(x, 2))
@@ -146,15 +162,17 @@ with tab_oportunidades:
 
     st.dataframe(
         tabela_formatada.rename(columns={
+            "Posição": "Posição",
             "NO_PAIS": "País",
             "volume_medio_usd": "Volume Médio",
             "crescimento_pct": "Crescimento",
-            "coef_variacao": "Coef. Variação",
+            "coef_variacao": "Estabilidade (CV)",
             "IPM": "IPM"
         }),
         use_container_width=True,
         hide_index=True
     )
+    st.caption("Quanto menor o CV (coeficiente de variação), maior a estabilidade relativa dos fluxos de exportação.")
 
     # === TELA 4: Análise por País ===
 with tab_analise_pais:
@@ -171,7 +189,6 @@ with tab_analise_pais:
     total_paises = len(ranking_ordenado)
 
     st.markdown(f"**Posição no ranking:** {posicao}º de {total_paises} países analisados para este NCM")
-    st.markdown(f"**IPM: {formatar_numero(dados_pais['IPM'], 1)} / 100**")
 
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("IPM", formatar_numero(dados_pais["IPM"], 1))
@@ -253,23 +270,23 @@ with tab_recomendacao:
         st.warning(
             f"Atenção: apenas {len(ranking_ordenado)} países atendem aos critérios de relevância "
             "para este NCM. Com poucos mercados, a normalização do IPM (escala de 0 a 100 entre "
-            "o menor e o maior valor) tende a exagerar diferenças pequenas, e o ranking é menos robusto."
+            "o menor e o maior valor) tende a exagerar diferenças pequenas, devendo o ranking ser interpretado com maior cautela."
         )
 
-    st.markdown("#### Demais mercados em destaque")
+    st.markdown("#### Outros mercados nas primeiras posições")
     proximos = ranking.sort_values("IPM", ascending=False).iloc[1:4]
 
     for _, linha in proximos.iterrows():
-                st.write(
+        st.write(
             f"- **{linha['NO_PAIS']}** (IPM = {formatar_numero(linha['IPM'], 1)}): "
             f"crescimento de {formatar_numero(linha['crescimento_pct'], 1)}%, "
             f"volume médio de {formatar_moeda(linha['volume_medio_usd'])}"
         )
 
     st.caption(
-        "O IPM classifica os mercados analisados segundo os critérios e pesos definidos no modelo, "
+        "O IPM prioriza os mercados analisados segundo os critérios e pesos definidos no modelo, "
         "com base exclusivamente em dados de exportações brasileiras. Não representa uma medida de "
         "demanda do mercado importador, participação de mercado, condições tarifárias ou barreiras "
-        "comerciais específicas de cada país, devendo ser interpretado como apoio à decisão, "
-        "não como recomendação definitiva."
+        "comerciais específicas de cada país, devendo ser interpretado como instrumento de apoio "
+        "à análise e à tomada de decisão."
     )
