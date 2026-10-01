@@ -4,7 +4,6 @@ ncms_interesse = ["39201099", "39232190", "39232110"]
 
 anos = [2021, 2022, 2023, 2024, 2025]
 
-# Lista vazia pra guardar o resultado filtrado de cada ano
 tabelas_filtradas = []
 
 for ano in anos:
@@ -18,12 +17,11 @@ for ano in anos:
     print(f"  → {len(df_ano_filtrado)} linhas encontradas em {ano}")
     tabelas_filtradas.append(df_ano_filtrado)
 
-# Junta todos os anos filtrados em uma tabela
+# junta os 5 anos na tabela
 dados_exportacao = pd.concat(tabelas_filtradas, ignore_index=True)
 
 print(f"\nTotal de linhas após juntar todos os anos: {len(dados_exportacao)}")
 
-# NCM e nome do pais
 ncm_desc = pd.read_csv("dados_brutos/NCM.csv", sep=";", encoding="latin1")
 pais_desc = pd.read_csv("dados_brutos/PAIS.csv", sep=";", encoding="latin1")
 
