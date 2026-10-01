@@ -7,6 +7,20 @@ def formatar_moeda(valor):
     texto = f"{valor:,.0f}"
     return "US$ " + texto.replace(",", "X").replace(".", ",").replace("X", ".")
 
+def formatar_moeda_curta(valor):
+    """Formata valores grandes de forma abreviada (mil, mi, bi), no padrão brasileiro."""
+    if valor >= 1_000_000_000:
+        numero = formatar_numero(valor / 1_000_000_000, 1)
+        return f"US$ {numero} bi"
+    elif valor >= 1_000_000:
+        numero = formatar_numero(valor / 1_000_000, 1)
+        return f"US$ {numero} mi"
+    elif valor >= 1_000:
+        numero = formatar_numero(valor / 1_000, 1)
+        return f"US$ {numero} mil"
+    else:
+        return formatar_moeda(valor)
+
 
 def formatar_numero(valor, casas=1):
     """Formata um número decimal no padrão brasileiro (vírgula)."""
@@ -144,7 +158,7 @@ with tab_oportunidades:
         text="IPM",
         color_discrete_sequence=["#3A8D5D"]
     )
-    
+
     fig_ipm.update_layout(yaxis={"categoryorder": "total ascending"})
     fig_ipm.update_traces(texttemplate="%{text:.1f}", textposition="outside")
     fig_ipm.update_layout(separators=",.")
@@ -196,7 +210,7 @@ with tab_analise_pais:
 
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("IPM", formatar_numero(dados_pais["IPM"], 1))
-    col2.metric("Volume Médio", formatar_moeda(dados_pais["volume_medio_usd"]))
+    col2.metric("Volume Médio", formatar_moeda_curta(dados_pais["volume_medio_usd"]))
     col3.metric("Crescimento", formatar_numero(dados_pais["crescimento_pct"], 1) + "%")
     col4.metric("Coef. Variação", formatar_numero(dados_pais["coef_variacao"], 2))
 
