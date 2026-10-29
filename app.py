@@ -112,6 +112,9 @@ with tab_visao_global:
     fig_top10.update_traces(texttemplate="%{text:,.0f}", textposition="outside")
     fig_top10.update_layout(separators=",.")
     
+    fig_top10.update_traces(cliponaxis=False)
+    fig_top10.update_xaxes(range=[0, top10_volume["volume_medio_usd"].max() * 1.15])
+    
     st.caption(f"NCM {ncm_escolhido} · 2021-2025")
 
     st.plotly_chart(fig_top10, use_container_width=True)
@@ -132,6 +135,7 @@ with tab_visao_global:
     )
 
     fig_evolucao.update_layout(separators=",.")
+    fig_evolucao.update_xaxes(dtick=1, tickformat="d")
     st.plotly_chart(fig_evolucao, use_container_width=True)
 
 # === TELA 3: Análise de Oportunidades ===
@@ -208,11 +212,12 @@ with tab_analise_pais:
 
     st.markdown(f"**Posição no ranking:** {posicao}º de {total_paises} países analisados para este NCM")
 
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("IPM", formatar_numero(dados_pais["IPM"], 1))
-    col2.metric("Volume Médio", formatar_moeda_curta(dados_pais["volume_medio_usd"]))
-    col3.metric("Crescimento", formatar_numero(dados_pais["crescimento_pct"], 1) + "%")
-    col4.metric("Coef. Variação", formatar_numero(dados_pais["coef_variacao"], 2))
+    c1, c2 = st.columns(2)
+    c1.metric("IPM", formatar_numero(dados_pais["IPM"], 1))
+    c2.metric("Volume Médio", formatar_moeda_curta(dados_pais["volume_medio_usd"]))
+    c3, c4 = st.columns(2)
+    c3.metric("Crescimento", formatar_numero(dados_pais["crescimento_pct"], 1) + "%")
+    c4.metric("Estabilidade (CV)", formatar_numero(dados_pais["coef_variacao"], 2))
 
     st.markdown(f"### Evolução das Exportações Brasileiras para {pais_escolhido}")
 
@@ -228,6 +233,7 @@ with tab_analise_pais:
     )
     
     fig_pais.update_layout(separators=",.")
+    fig_pais.update_xaxes(dtick=1, tickformat="d")
     st.plotly_chart(fig_pais, use_container_width=True)
 
     # === TELA 5: Recomendação Automática ===
